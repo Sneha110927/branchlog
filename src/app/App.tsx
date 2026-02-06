@@ -4,9 +4,13 @@ import { Toaster } from "./components/ui/sonner";
 import { Navigation } from "./components/navigation";
 import { Dashboard } from "./pages/dashboard";
 import { RecordsList } from "./pages/records-list";
-import { RecordDetails } from "./pages/record-details";
 import { CreateRecord } from "./pages/create-record";
 import { DesignSystem } from "./pages/design-system";
+import { Login } from "./pages/login";
+import { Register } from "./pages/register";
+import { RecordDetails } from "./pages/record-details";
+import { Profile } from "./pages/profile";
+import { useSession } from "next-auth/react";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -32,6 +36,30 @@ export default function App() {
     setDarkMode(!darkMode);
   };
 
+  const renderPage = () => {
+    switch (currentPage) {
+      case "dashboard":
+        return <Dashboard onNavigate={handleNavigate} />;
+      case "records":
+        return <RecordsList onNavigate={handleNavigate} />;
+      case "create":
+        return <CreateRecord onNavigate={handleNavigate} recordId={selectedRecordId} />;
+      case "design-system":
+        return <DesignSystem />;
+      case "login":
+        return <Login onNavigate={handleNavigate} />;
+      case "register":
+        return <Register onNavigate={handleNavigate} />;
+      case "record-details":
+        if (selectedRecordId) return <RecordDetails recordId={selectedRecordId} onNavigate={handleNavigate} />;
+        return <Dashboard onNavigate={handleNavigate} />;
+      case "profile":
+        return <Profile onNavigate={handleNavigate} />;
+      default:
+        return <Dashboard onNavigate={handleNavigate} />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation
@@ -49,17 +77,7 @@ export default function App() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {currentPage === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
-          {currentPage === "records" && <RecordsList onNavigate={handleNavigate} />}
-          {currentPage === "record-details" && (
-            <RecordDetails
-              recordId={selectedRecordId}
-              onNavigate={handleNavigate}
-              darkMode={darkMode}
-            />
-          )}
-          {currentPage === "create" && <CreateRecord onNavigate={handleNavigate} />}
-          {currentPage === "design-system" && <DesignSystem />}
+          {renderPage()}
         </motion.div>
       </AnimatePresence>
 

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Filter, Calendar, User, FolderTree } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Filter, Calendar, User, FolderTree, Loader2 } from "lucide-react";
 import { RecordCard } from "../components/record-card";
 import { EnvironmentBadge } from "../components/environment-badge";
 import { Button } from "../components/ui/button";
@@ -15,78 +15,37 @@ interface RecordsListProps {
 export function RecordsList({ onNavigate }: RecordsListProps) {
   const [selectedEnv, setSelectedEnv] = useState<string | null>(null);
   const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockRecords = [
-    {
-      id: "1",
-      branch: "feature/user-authentication",
-      environment: "DEV" as const,
-      taskId: "TASK-1234",
-      timestamp: "2 hours ago",
-      summary: "Implemented JWT authentication with refresh token support and password hashing using bcrypt",
-      linesAdded: 234,
-      linesRemoved: 45,
-      filesChanged: 8,
-      author: "Sarah Chen",
-      files: ["src/auth/jwt.ts", "src/auth/middleware.ts", "src/models/user.ts"],
-    },
-    {
-      id: "2",
-      branch: "bugfix/payment-gateway",
-      environment: "UAT" as const,
-      taskId: "TASK-1256",
-      timestamp: "5 hours ago",
-      summary: "Fixed payment processing timeout issues and added retry logic for failed transactions",
-      linesAdded: 89,
-      linesRemoved: 112,
-      filesChanged: 4,
-      author: "Marcus Johnson",
-      files: ["src/payments/processor.ts", "src/payments/retry.ts"],
-    },
-    {
-      id: "3",
-      branch: "hotfix/critical-security",
-      environment: "LIVE" as const,
-      taskId: "TASK-1289",
-      timestamp: "1 day ago",
-      summary: "Patched SQL injection vulnerability in user search endpoint and updated dependencies",
-      linesAdded: 23,
-      linesRemoved: 67,
-      filesChanged: 2,
-      author: "Alex Rivera",
-      files: ["src/api/search.ts", "package.json"],
-    },
-    {
-      id: "4",
-      branch: "feature/dashboard-analytics",
-      environment: "DEV" as const,
-      taskId: "TASK-1301",
-      timestamp: "2 days ago",
-      summary: "Added real-time analytics dashboard with chart components and data visualization",
-      linesAdded: 456,
-      linesRemoved: 12,
-      filesChanged: 12,
-      author: "Emma Watson",
-      files: ["src/components/charts/", "src/pages/analytics.tsx", "src/utils/data.ts"],
-    },
-    {
-      id: "5",
-      branch: "feature/email-notifications",
-      environment: "UAT" as const,
-      taskId: "TASK-1312",
-      timestamp: "3 days ago",
-      summary: "Implemented email notification system with template engine and queue processing",
-      linesAdded: 178,
-      linesRemoved: 8,
-      filesChanged: 6,
-      author: "James Park",
-      files: ["src/notifications/email.ts", "src/templates/", "src/queue/worker.ts"],
-    },
-  ];
+  // New Filter States
+  const [branchFilter, setBranchFilter] = useState("");
+  const [authorFilter, setAuthorFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  const filteredRecords = selectedEnv
-    ? mockRecords.filter(r => r.environment === selectedEnv)
-    : mockRecords;
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (selectedEnv) params.append("environment", selectedEnv);
+    if (branchFilter) params.append("branch", branchFilter);
+    if (authorFilter) params.append("author", authorFilter);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    fetch(`/api/records?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setRecords(data);
+        }
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error(e);
+        setLoading(false);
+      });
+  }, [selectedEnv, branchFilter, authorFilter, startDate, endDate]);
 
   return (
     <div className="min-h-screen">
@@ -117,9 +76,8 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                       >
                         <EnvironmentBadge
                           env={env}
-                          className={`w-full justify-center ${
-                            selectedEnv === env ? "ring-2 ring-[#06b6d4]/50" : "opacity-60 hover:opacity-100"
-                          }`}
+                          className={`w-full justify-center ${selectedEnv === env ? "ring-2 ring-[#06b6d4]/50" : "opacity-60 hover:opacity-100"
+                            }`}
                         />
                       </button>
                     ))}
@@ -133,8 +91,8 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                     Date Range
                   </Label>
                   <div className="space-y-2">
-                    <Input type="date" className="w-full" />
-                    <Input type="date" className="w-full" />
+                    <Input type="date" className="w-full" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    <Input type="date" className="w-full" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                   </div>
                 </div>
 
@@ -144,7 +102,7 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                     <FolderTree className="w-4 h-4" />
                     Branch
                   </Label>
-                  <Input placeholder="Filter by branch..." />
+                  <Input placeholder="Filter by branch..." value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} />
                 </div>
 
                 {/* Author */}
@@ -153,13 +111,19 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                     <User className="w-4 h-4" />
                     Author
                   </Label>
-                  <Input placeholder="Filter by author..." />
+                  <Input placeholder="Filter by author..." value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)} />
                 </div>
 
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => setSelectedEnv(null)}
+                  onClick={() => {
+                    setSelectedEnv(null);
+                    setBranchFilter("");
+                    setAuthorFilter("");
+                    setStartDate("");
+                    setEndDate("");
+                  }}
                 >
                   Clear Filters
                 </Button>
@@ -178,7 +142,7 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                 Records History
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground">
-                {filteredRecords.length} record{filteredRecords.length !== 1 ? "s" : ""} found
+                {records.length} record{records.length !== 1 ? "s" : ""} found
               </p>
             </motion.div>
 
@@ -187,9 +151,11 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
               <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#06b6d4] via-[#8b5cf6] to-transparent hidden md:block" />
 
               <div className="space-y-6">
-                {filteredRecords.map((record, index) => (
+                {loading ? (
+                  <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+                ) : records.map((record, index) => (
                   <motion.div
-                    key={record.id}
+                    key={record._id || record.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -201,14 +167,18 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                     <Accordion
                       type="single"
                       collapsible
-                      value={expandedRecord === record.id ? record.id : undefined}
+                      value={expandedRecord === (record._id || record.id) ? (record._id || record.id) : undefined}
                       onValueChange={(value) => setExpandedRecord(value || null)}
                     >
-                      <AccordionItem value={record.id} className="border-none">
+                      <AccordionItem value={record._id || record.id} className="border-none">
                         <AccordionTrigger className="hover:no-underline p-0">
                           <RecordCard
                             {...record}
-                            onClick={() => {}}
+                            // Pass ID explicitly as string if needed
+                            id={record._id || record.id}
+                            onClick={() => { }}
+                            // Adapt createAt to timestamp prop if RecordCard needs it
+                            timestamp={new Date(record.createdAt).toLocaleString()}
                           />
                         </AccordionTrigger>
                         <AccordionContent>
@@ -223,20 +193,25 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                               Author: {record.author}
                             </h4>
                             <div className="space-y-2">
-                              <p className="text-sm font-medium text-muted-foreground">Changed Files:</p>
-                              {record.files.map((file, i) => (
-                                <div
-                                  key={i}
-                                  className="text-sm bg-card p-2 rounded border border-border/50 font-mono hover:border-[#06b6d4]/30 transition-colors cursor-pointer"
-                                  onClick={() => onNavigate("record-details", record.id)}
-                                >
-                                  {file}
-                                </div>
-                              ))}
+                              {/* If no files info in DB, hide changed files or show something else */}
+                              {record.files && (
+                                <>
+                                  <p className="text-sm font-medium text-muted-foreground">Changed Files:</p>
+                                  {record.files.map((file: string, i: number) => (
+                                    <div
+                                      key={i}
+                                      className="text-sm bg-card p-2 rounded border border-border/50 font-mono hover:border-[#06b6d4]/30 transition-colors cursor-pointer"
+                                      onClick={() => onNavigate("record-details", record._id || record.id)}
+                                    >
+                                      {file}
+                                    </div>
+                                  ))}
+                                </>
+                              )}
                             </div>
                             <Button
                               className="mt-4 w-full bg-gradient-to-r from-[#06b6d4] to-[#8b5cf6] hover:opacity-90 text-white border-0"
-                              onClick={() => onNavigate("record-details", record.id)}
+                              onClick={() => onNavigate("record-details", record._id || record.id)}
                             >
                               View Full Diff
                             </Button>

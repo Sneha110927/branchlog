@@ -1,10 +1,11 @@
-import { Search, Moon, Sun, LayoutDashboard, History, Plus, Palette, Menu, X } from "lucide-react";
+import { Search, Moon, Sun, LayoutDashboard, History, Plus, Palette, Menu, X, LogOut, Loader2, User } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { EnvironmentBadge } from "./environment-badge";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession, signOut } from "next-auth/react";
 
 interface NavigationProps {
   onNavigate: (page: string) => void;
@@ -16,6 +17,7 @@ interface NavigationProps {
 export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode }: NavigationProps) {
   const [selectedEnv, setSelectedEnv] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   return (
     <motion.nav
@@ -27,7 +29,7 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
         <div className="flex items-center justify-between gap-4">
           {/* Logo and Mobile Menu Toggle */}
           <div className="flex items-center gap-4">
-            <motion.h1 
+            <motion.h1
               className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#06b6d4] to-[#8b5cf6] bg-clip-text text-transparent cursor-pointer"
               whileHover={{ scale: 1.05 }}
               onClick={() => {
@@ -37,7 +39,7 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
             >
               BranchLog
             </motion.h1>
-            
+
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-2">
               <Button
@@ -79,7 +81,7 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
                 className="pl-10 bg-secondary/50 border-border/50 focus:border-[#06b6d4]/50"
               />
             </div>
-            
+
             <div className="flex gap-2">
               {(["UAT", "LIVE", "DEV"] as const).map((env) => (
                 <button
@@ -87,8 +89,8 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
                   onClick={() => setSelectedEnv(selectedEnv === env ? null : env)}
                   className="transition-transform hover:scale-105"
                 >
-                  <EnvironmentBadge 
-                    env={env} 
+                  <EnvironmentBadge
+                    env={env}
                     className={selectedEnv === env ? "ring-2 ring-[#06b6d4]/50" : "opacity-60 hover:opacity-100"}
                   />
                 </button>
@@ -101,7 +103,11 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
             <Button
               size="sm"
               onClick={() => {
-                onNavigate("create");
+                if (status === "unauthenticated") {
+                  onNavigate("login");
+                } else {
+                  onNavigate("create");
+                }
                 setMobileMenuOpen(false);
               }}
               className="bg-gradient-to-r from-[#06b6d4] to-[#8b5cf6] hover:opacity-90 text-white border-0 gap-2"
@@ -109,7 +115,7 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">New Record</span>
             </Button>
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -118,11 +124,27 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
             >
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
-            
-            <Avatar className="w-8 h-8 sm:w-9 sm:h-9 cursor-pointer ring-2 ring-border hover:ring-[#06b6d4]/50 transition-all hidden sm:flex">
-              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+
+            {status === "loading" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : status === "authenticated" ? (
+              <div className="flex items-center gap-2">
+                <Avatar
+                  className="w-8 h-8 sm:w-9 sm:h-9 cursor-pointer ring-2 ring-border hover:ring-[#06b6d4]/50 transition-all hidden sm:flex"
+                  onClick={() => onNavigate("profile")}
+                >
+                  <AvatarImage src={session.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user?.name}`} />
+                  <AvatarFallback>{session.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <Button variant="ghost" size="icon" onClick={() => signOut()} title="Logout">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => onNavigate("login")}>
+                Login
+              </Button>
+            )}
 
             {/* Mobile Menu Button */}
             <Button
@@ -191,6 +213,41 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
                   {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                   {darkMode ? "Light Mode" : "Dark Mode"}
                 </Button>
+                {status === "authenticated" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        onNavigate("profile");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full justify-start gap-2"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => signOut()}
+                      className="w-full justify-start gap-2 text-red-500 hover:text-red-600"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout ({session.user?.name})
+                    </Button>
+                  </>
+                )}
+                {status === "unauthenticated" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { onNavigate("login"); setMobileMenuOpen(false); }}
+                    className="w-full justify-start gap-2"
+                  >
+                    Login
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}
