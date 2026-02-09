@@ -8,9 +8,10 @@ import { Button } from "../components/ui/button";
 
 interface DashboardProps {
   onNavigate: (page: string, recordId?: string) => void;
+  selectedEnv?: string | null;
 }
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard({ onNavigate, selectedEnv }: DashboardProps) {
   const { data: session, status } = useSession();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +24,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       return;
     }
 
-    fetch("/api/records?limit=5")
+    const params = new URLSearchParams({ limit: "5" });
+    if (selectedEnv) params.append("environment", selectedEnv);
+
+    fetch(`/api/records?${params.toString()}`)
       .then((res) => {
         if (res.status === 401) {
           throw new Error("Unauthorized");
@@ -40,7 +44,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         console.error(err);
         setLoading(false);
       });
-  }, [status]);
+  }, [status, selectedEnv]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#06b6d4]" /></div>;

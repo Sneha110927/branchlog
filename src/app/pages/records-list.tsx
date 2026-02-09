@@ -10,10 +10,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 
 interface RecordsListProps {
   onNavigate: (page: string, recordId?: string) => void;
+  selectedEnv: string | null;
+  onEnvChange?: (env: string | null) => void;
 }
 
-export function RecordsList({ onNavigate }: RecordsListProps) {
-  const [selectedEnv, setSelectedEnv] = useState<string | null>(null);
+export function RecordsList({ onNavigate, selectedEnv, onEnvChange }: RecordsListProps) {
+  // const [selectedEnv, setSelectedEnv] = useState<string | null>(null); // Lifted to App
   const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                     {(["UAT", "LIVE", "DEV"] as const).map((env) => (
                       <button
                         key={env}
-                        onClick={() => setSelectedEnv(selectedEnv === env ? null : env)}
+                        onClick={() => onEnvChange?.(selectedEnv === env ? null : env)}
                         className="w-full"
                       >
                         <EnvironmentBadge
@@ -118,7 +120,7 @@ export function RecordsList({ onNavigate }: RecordsListProps) {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    setSelectedEnv(null);
+                    onEnvChange?.(null);
                     setBranchFilter("");
                     setAuthorFilter("");
                     setStartDate("");

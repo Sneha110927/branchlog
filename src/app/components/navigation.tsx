@@ -12,10 +12,11 @@ interface NavigationProps {
   currentPage: string;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  selectedEnv: string | null;
+  onEnvChange: (env: string | null) => void;
 }
 
-export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode }: NavigationProps) {
-  const [selectedEnv, setSelectedEnv] = useState<string | null>(null);
+export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode, selectedEnv, onEnvChange }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: session, status } = useSession();
 
@@ -86,7 +87,7 @@ export function Navigation({ onNavigate, currentPage, darkMode, onToggleDarkMode
               {(["UAT", "LIVE", "DEV"] as const).map((env) => (
                 <button
                   key={env}
-                  onClick={() => setSelectedEnv(selectedEnv === env ? null : env)}
+                  onClick={() => onEnvChange(selectedEnv === env ? null : env)}
                   className="transition-transform hover:scale-105"
                 >
                   <EnvironmentBadge

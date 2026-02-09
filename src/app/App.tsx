@@ -17,6 +17,8 @@ export default function App() {
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>();
   const [darkMode, setDarkMode] = useState(true);
 
+  const [selectedEnv, setSelectedEnv] = useState<string | null>(null);
+
   useEffect(() => {
     // Apply dark mode class to document
     if (darkMode) {
@@ -39,9 +41,9 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard onNavigate={handleNavigate} />;
+        return <Dashboard onNavigate={handleNavigate} selectedEnv={selectedEnv} />;
       case "records":
-        return <RecordsList onNavigate={handleNavigate} />;
+        return <RecordsList onNavigate={handleNavigate} selectedEnv={selectedEnv} onEnvChange={setSelectedEnv} />;
       case "create":
         return <CreateRecord onNavigate={handleNavigate} recordId={selectedRecordId} />;
       case "design-system":
@@ -52,11 +54,11 @@ export default function App() {
         return <Register onNavigate={handleNavigate} />;
       case "record-details":
         if (selectedRecordId) return <RecordDetails recordId={selectedRecordId} onNavigate={handleNavigate} />;
-        return <Dashboard onNavigate={handleNavigate} />;
+        return <Dashboard onNavigate={handleNavigate} selectedEnv={selectedEnv} />;
       case "profile":
         return <Profile onNavigate={handleNavigate} />;
       default:
-        return <Dashboard onNavigate={handleNavigate} />;
+        return <Dashboard onNavigate={handleNavigate} selectedEnv={selectedEnv} />;
     }
   };
 
@@ -67,6 +69,8 @@ export default function App() {
         currentPage={currentPage}
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
+        selectedEnv={selectedEnv}
+        onEnvChange={setSelectedEnv}
       />
 
       <AnimatePresence mode="wait">
