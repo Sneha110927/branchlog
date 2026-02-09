@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -40,6 +41,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "diff": "^8.0.3",
+    "dotenv": "^17.2.4",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.33.0",
     "input-otp": "^1.4.2",
