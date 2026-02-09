@@ -2,8 +2,8 @@ import mongoose, { Schema, model, models } from 'mongoose';
 
 const RecordSchema = new Schema({
     user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // Changed from ObjectId to String to support GitHub IDs
+        required: true,
     },
     environment: {
         type: String,
