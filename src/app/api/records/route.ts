@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
         await dbConnect();
 
-        const query: any = {};
+        const query: any = { user: (session.user as any).id };
         if (environment) query.environment = environment;
         if (branch) query.branch = { $regex: branch, $options: 'i' };
         if (author) query.author = { $regex: author, $options: 'i' };
@@ -47,6 +47,11 @@ import { parseDiffStats } from "@/lib/diff-utils";
 
 export async function POST(req: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
+
         await dbConnect();
         const data = await req.json();
 
@@ -59,6 +64,7 @@ export async function POST(req: Request) {
 
         const newRecord = await Record.create({
             ...data,
+            user: (session.user as any).id,
             filesChanged: stats.filesChanged,
             linesAdded: stats.linesAdded,
             linesRemoved: stats.linesRemoved
