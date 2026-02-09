@@ -71,8 +71,11 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json(newRecord, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating record:", error);
-        return NextResponse.json({ message: "Internal Error" }, { status: 500 });
+        return NextResponse.json({
+            message: "Internal Error",
+            details: error.message || String(error)
+        }, { status: 500 });
     }
 }
